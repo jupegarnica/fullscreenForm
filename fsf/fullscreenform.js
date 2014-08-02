@@ -5,16 +5,34 @@
  * Time: 04:25 PM
  */
 (function($) {
-    var debug = window.fullscreenform.debug;
-
-    function init() {}
-    //console.log($('p').text());
-    if(window.fullscreenform.options.length != 0) {
-        debug && console.log('started before load');
-        for(var i in window.fullscreenform.options) {
-            var options = window.fullscreenform.options[i];
-            start(options);
+    var debug = true;
+    
+    function fullscreenformInit(selector, options) {
+        options = options || {};
+        if(typeof selector === "string") {
+            var setting = {
+                selector: selector,
+                background: 'rgba(30,30,30,0.95)',
+                color: '#fff',
+                zindex: 9999,
+                overlay: '<div class="fsfOverlay"><div class="fsfContainer"></div></div>',
+                next: '<a class="fsfNext" href="javascript:fullscreenform.nextNode();">' + 'Next' + '</a>',
+                exclude: ['input[type="submit"]'],
+                steps: '<span class="fsfstep"></span>'
+            }
+            for(var prop in setting) {
+                setting[prop] = options[prop] || setting[prop];
+                debug && options[prop] && console.log('Default setting changed:', prop, options[prop]);
+            }
+            window.fullscreenform.options = setting;
+            start(setting);
         }
+    };
+    window.fullscreenform = fullscreenformInit;
+	
+    //start it if a target on autoinit is received
+    if (window.fsfAutoinit.target) {
+        fullscreenform(window.fsfAutoinit.target , window.fsfAutoinit.options)
     }
 
     function start(options) {

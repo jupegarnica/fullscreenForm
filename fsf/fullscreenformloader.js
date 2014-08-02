@@ -6,29 +6,54 @@
  *
  * FEATURES:
  *
- * starting before even has been loaded, it's not needed to wait until fullscreenform has been loaded
+ * Easy config like:
+ * <script src="fullscreenformloader.js" id="fsfAutoLoader" data-fsf-target=".checkout"></script>
+ * <script src="fullscreenformloader.js" id="fsfAutoLoader" data-fsf-latest="true" data-fsf-target=".checkout" data-fsf-options="{'exclude':['#billing_address_2','#payment_method_paypal', '#payment_method_sermepa' , 'input[type=submit]' ]}"></script>
+ *
  * use over https or http
- * the user doesn't need to load any library such a jQuery if needed.
- * totally configurable. not one css, just JS
+ * the user doesn't need to load any library such as jQuery.
+ * totally configurable.
  *
  */
 var jQuery = jQuery || undefined;
 var debug = true;
 (function($) {
-    /* find fsf path*/
-    var scripts = document.getElementsByTagName('script');
-    var url = document.location.href;
-    var path = url.substring( 0 , url.lastIndexOf("/") + 1 );
-    var fsfLoaderSrc = "";
-    for (var _i in scripts) {
-        if (scripts[_i].src && scripts[_i].src.match('fullscreenformloader.js') ) {
-            fsfLoaderSrc = scripts[_i].src.split('fullscreenformloader.js')[0].split(path)[1];
-        }
+    
+    var fsfAutoLoader = document.getElementById('fsfAutoLoader');
+    window.fsfAutoinit = {
+        target: fsfAutoLoader.getAttribute('data-fsf-target'),
+        options: (function() {
+            try {
+                return JSON.parse(fsfAutoLoader.getAttribute('data-fsf-options').split("'").join('"')); //switch quotes if they are in tha bad way
+            } catch(e) {
+                console.log('Error un data-fsf-options:', e.name, e.message);
+            }
+        })(),
+        latest: (function() {
+            try {
+                return JSON.parse(fsfAutoLoader.getAttribute('data-fsf-latest'));
+            } catch(e) {
+                return false;
+            }
+        })(),
+    };
+    debug && console.log(window.fsfAutoinit);
+    
+    
+    // find fsf path
+    if(!window.fsfAutoinit.latest) {
+        var url = document.location.href;
+        var path = url.substring(0, url.lastIndexOf("/") + 1);
+        var fsfPath;
+        fsfPath = fsfAutoLoader.src.split('fullscreenformloader.js')[0].split(path)[1];
+    } else {
+        fsfPath = 'PATH/TO/PRODUCTION/CDN';
     }
+
     function _loadjQ() {
         var loader = document.createElement('script');
         loader.type = 'text/javascript';
-        loader.async = false;
+        loader.async = true;
         loader.id = 'jQLoaded';
         // It can be used over http or https
         loader.src = ('https:' == document.location.protocol ? 'https' : 'http') + '://ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js';
@@ -45,23 +70,22 @@ var debug = true;
     function _loadFullscreenform() {
         var loader = document.createElement('script');
         loader.type = 'text/javascript';
-        loader.async = false;
+        loader.async = true;
         loader.id = 'fullscreenformLoaded';
-        loader.src = fsfLoaderSrc + 'fullscreenform.js';
+        loader.src = fsfPath + 'fullscreenform.js';
         var x = document.getElementsByTagName('head')[0];
         x.appendChild(loader);
     }
-	// Load Css directly
-    (function loadFullscreenformCss() {
+    // Load Css directly
+    (function _loadFullscreenformCss() {
         var head = document.getElementsByTagName('head')[0];
         var link = document.createElement('link');
         link.type = 'text/css';
         link.rel = 'stylesheet';
         link.media = 'screen';
         link.id = 'fullscreenformCssLoaded';
-        link.href = fsfLoaderSrc + 'fullscreenform.css';
+        link.href = fsfPath + 'fullscreenform.css';
         head.appendChild(link);
-        
     })();
     // Autoload jQuery if is not defined  
     if(!$) {
@@ -77,35 +101,7 @@ var debug = true;
             window.addEventListener('load', _loadFullscreenform, false);
         }
     }
-	    
     //it takes the parameters even before the code has been loaded to avoid calling the initializer after window load
-    function fullscreenform(selector, options) {
-        options = options || {};
-        if(typeof selector === "string") {
-            var defaultOptions = {
-                selector: selector,
-                background: 'rgba(30,30,30,0.95)',
-                color: '#fff',
-                zindex: 9999,
-                overlay: '<div class="fsfOverlay"><div class="fsfContainer"></div></div>',
-                next: '<a class="fsfNext" href="javascript:fullscreenform.nextNode();">' + 'Next' + '</a>',
-                exclude: ['input[type="submit"]' ],
-                steps: '<span class="fsfstep"></span>'
-            }
-            for(var prop in options) {
-                defaultOptions[prop] = options[prop] || defaultOptions[prop];
-                debug && console.log(prop, options[prop]);
-            }
-            window.fullscreenform.options.push(defaultOptions);
-            try {
-                window.fullscreenform.fullscreenformStart(defaultOptions);
-            } catch(e) {}
-        }
-        return selector;
-    }
-    window.fullscreenform = fullscreenform;
-    window.fullscreenform.options = [];
-    window.fullscreenform.debug = debug;
-    fullscreenform('.checkout', {exclude:['#billing_address_2','#payment_method_paypal', '#payment_method_sermepa' , 'input[type="submit"]' ]});
-    
+
+    function fullscreenformAutoInit(selector, options) {}
 })(jQuery);
